@@ -2,9 +2,11 @@
 import React, { useState } from "react";
 import * as Zod from'zod'
 import { useForm } from "react-hook-form";
-import { data } from "react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
+import Swal from 'sweetalert2';
+import { useNavigate } from "react-router";
+
 // type user ={
 //   name:string ,
 //   username:string,
@@ -15,26 +17,27 @@ import axios from "axios";
 //   gender:"male"|"female"
 // }
 export default function Register() {
+  let nav = useNavigate()
     let ValidationSchema = Zod.object(
     {
       name:Zod.string().min(2 ,"Min Length Is 2"),
       email:Zod.string().regex(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,"Enter Valid Email"),
       username:Zod.string().regex(/^[a-zA-Z0-9_-]{3,16}$/ ,"Enter Valid UserName"),
       password : Zod.string().regex(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/ , "Enter Valid Passord"),
-      repassword:Zod.string(),
+      rePassword:Zod.string(),
       gender :Zod.enum(["male","female"]),
-      dateOfBirth: Zod.date().refine((data)=>{
+      dateOfBirth: Zod.date().refine((data:Date)=>{
         const nowdate = new Date()
-        const year = nowdate.getFullYear()
+        const Nowyear = nowdate.getFullYear()
         const datOfbrith = data.getFullYear()
-        return(year - datOfbrith) > 10
-      },{
-        error:"Enter Valid Date"
-      })
+        return(Nowyear - datOfbrith) > 10
+      },"Enter Valid Date")
+  
+  
     }).refine((data)=>{
-      return data.password == data.repassword
+      return data.password == data.rePassword
     },{
-      message:" Confirme Password Not match Password",
+      error:" Confirme Password Not match Password",
       path:['repassword']
     }) 
   type user = Zod.infer<typeof ValidationSchema>
@@ -45,26 +48,41 @@ export default function Register() {
       username:"",
       email:"",
       password :"",
-       repassword:"",
+       rePassword:"",
       gender:"male",
       dateOfBirth:undefined
     },
     resolver:zodResolver(ValidationSchema)
   })
+  // console.log(errors);
+  
 
  async function handelApi(values){
 console.log(values);
-try {
-   let res = await  axios.post(`https://route-posts.routemisr.com/users/signup`, values)
-   console.log(res);
-   
-} catch (error) {
-  console.log(error);
-  
-}
+ 
 
-  }
-  
+     await  axios.post(`https://route-posts.routemisr.com/users/signup`, values).then((res)=>{
+ Swal.fire({
+      title: "Success!",
+      text: res.data.message,
+      icon: "success",
+      confirmButtonText: "OK",
+      confirmButtonColor: "#1e40af"
+    });
+    setTimeout(() => {
+      
+      nav("/login")
+    }, 2000);
+   }).catch ((err)=>{
+ Swal.fire({
+      title: "Error!",
+      text: err.response.data.message,
+      icon: "error",
+      confirmButtonText: "error",
+    });
+})
+
+}
   return (
     <div>
       <>
@@ -151,7 +169,7 @@ try {
       id="dateOfBirth"
       type="date"
       className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow text-body"
-      {...register("dateOfBirth")}
+      {...register("dateOfBirth" ,{valueAsDate:true})}
       
     />
       {errors.dateOfBirth &&<p className="text-red-500">{errors.dateOfBirth.message}</p>}
@@ -167,10 +185,10 @@ try {
       type="password"
       className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow placeholder:text-body"
       placeholder="••••••••"
-      {...register("passwored")}
+      {...register("password")}
       
     />
-      {errors.passwored &&<p className="text-red-500">{errors.passwored.message}</p>}
+      {errors.password &&<p className="text-red-500">{errors.password.message}</p>}
   </div>
 
   {/* Confirm Password */}
@@ -183,9 +201,9 @@ try {
       type="password"
       className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow placeholder:text-body"
       placeholder="••••••••"
-      {...register("repassword")}
+      {...register("rePassword")}
     />
-      {errors.repassword &&<p className="text-red-500">{errors.repassword.message}</p>}
+      {errors.rePassword &&<p className="text-red-500">{errors.rePassword.message}</p>}
   </div>
 
   {/* Submit Button */}

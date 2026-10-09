@@ -1,9 +1,11 @@
 import React from 'react'
 import { Outlet } from 'react-router'
+import { NavbarComponnent } from '../../Components/Navbar/NavbarComponnent'
 
 export default function AuthLayout() {
   return (
     <div>
+      <NavbarComponnent/>
       <main>
         <div className='container mx-auto mt-60'>
           <div className='grid md:grid-cols-2'>
